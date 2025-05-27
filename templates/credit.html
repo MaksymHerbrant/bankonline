@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кредит - Банківська система</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f4f4; }
+        .nav-link.active { font-weight: bold; color: #0d6efd !important; }
+    </style>
+</head>
+<body>
+    <!-- Меню -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ЧіпДейл Банк </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Головна</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.deposit_page') }}">Депозит</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.credit') }}">Кредит</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.settings') }}">Налаштування</a></li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text me-3">
+                        Вітаємо, {{ user.full_name.split()[0] }}!
+                    </span>
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger">Вийти</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Кредит сторінка -->
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Оформлення кредиту</h4>
+                        <form id="credit-form">
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Сума кредиту</label>
+                                <input type="number" class="form-control" id="amount" placeholder="Введіть суму" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="term" class="form-label">Термін кредиту (місяців)</label>
+                                <select class="form-select" id="term" required>
+                                    <option value="6">6 місяців</option>
+                                    <option value="12">12 місяців</option>
+                                    <option value="24">24 місяці</option>
+                                    <option value="36">36 місяців</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="purpose" class="form-label">Мета кредиту</label>
+                                <select class="form-select" id="purpose" required>
+                                    <option value="consumer">Споживчий кредит</option>
+                                    <option value="car">Автомобільний кредит</option>
+                                    <option value="mortgage">Іпотека</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-info">
+                                <h6>Розрахунок кредиту:</h6>
+                                <div id="credit-calc">
+                                    <p>Щомісячний платіж: <span id="monthly-payment">0</span> грн</p>
+                                    <p>Загальна сума до сплати: <span id="total-payment">0</span> грн</p>
+                                    <p>Відсотки: <span id="interest-amount">0</span> грн</p>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100">Оформити кредит</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Активні кредити</h5>
+                        {% if loans %}
+                            {% for loan in loans %}
+                                <div class="border-bottom py-2">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ "%.2f"|format(loan.amount) }} грн</strong>
+                                            <br>
+                                            <small class="text-muted">Термін: {{ loan.term_months }} місяців</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div>Залишок: {{ "%.2f"|format(loan.remaining_balance) }} грн</div>
+                                            <small class="text-danger">Відсоток: {{ "%.1f"|format(loan.interest_rate * 100) }}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">У вас немає активних кредитів</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function calculateCredit() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const term = parseInt(document.getElementById('term').value);
+            const purpose = document.getElementById('purpose').value;
+            
+            // Розрахунок відсоткової ставки в залежності від мети
+            let interestRate;
+            switch(purpose) {
+                case 'consumer':
+                    interestRate = 0.02; // 2% на місяць
+                    break;
+                case 'car':
+                    interestRate = 0.015; // 1.5% на місяць
+                    break;
+                case 'mortgage':
+                    interestRate = 0.01; // 1% на місяць
+                    break;
+                default:
+                    interestRate = 0.02;
+            }
+            
+            // Розрахунок щомісячного платежу
+            const monthlyRate = interestRate;
+            const monthlyPayment = (amount * monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+            const totalPayment = monthlyPayment * term;
+            const interestAmount = totalPayment - amount;
+            
+            // Оновлення відображення
+            document.getElementById('monthly-payment').textContent = monthlyPayment.toFixed(2);
+            document.getElementById('total-payment').textContent = totalPayment.toFixed(2);
+            document.getElementById('interest-amount').textContent = interestAmount.toFixed(2);
+        }
+
+        // Оновлення розрахунку при зміні значень
+        ['amount', 'term', 'purpose'].forEach(id => {
+            document.getElementById(id).addEventListener('change', calculateCredit);
+        });
+
+        document.getElementById('credit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('amount').value;
+            const term = document.getElementById('term').value;
+            const purpose = document.getElementById('purpose').value;
+
+            try {
+                const response = await fetch('/credit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        term_months: parseInt(term),
+                        purpose: purpose
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Кредит успішно оформлено!');
+                    location.reload();
+                } else {
+                    alert(data.error || 'Помилка при оформленні кредиту');
+                }
+            } catch (error) {
+                console.error('Помилка:', error);
+                alert('Помилка при оформленні кредиту');
+            }
+        });
+    </script>
+</body>
+</html> 

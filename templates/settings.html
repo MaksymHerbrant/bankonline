@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Налаштування - Банківська система</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f4f4; }
+        .nav-link.active { font-weight: bold; color: #0d6efd !important; }
+    </style>
+</head>
+<body>
+    <!-- Меню -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ЧіпДейл Банк </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Головна</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.deposit_page') }}">Депозит</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.credit') }}">Кредит</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.settings') }}">Налаштування</a></li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text me-3">
+                        Вітаємо, {{ user.full_name.split()[0] }}!
+                    </span>
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger">Вийти</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Налаштування сторінка -->
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Налаштування профілю</h4>
+                        
+                        <!-- Зміна пароля -->
+                        <div class="mb-4">
+                            <h5>Зміна пароля</h5>
+                            <form id="change-password-form">
+                                <div class="mb-3">
+                                    <label for="current-password" class="form-label">Поточний пароль</label>
+                                    <input type="password" class="form-control" id="current-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new-password" class="form-label">Новий пароль</label>
+                                    <input type="password" class="form-control" id="new-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm-password" class="form-label">Підтвердження пароля</label>
+                                    <input type="password" class="form-control" id="confirm-password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Змінити пароль</button>
+                            </form>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Зміна номера телефону -->
+                        <div class="mb-4">
+                            <h5>Зміна номера телефону</h5>
+                            <form id="change-phone-form">
+                                <div class="mb-3">
+                                    <label for="new-phone" class="form-label">Новий номер телефону</label>
+                                    <input type="tel" class="form-control" id="new-phone" placeholder="+380XXXXXXXXX" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Змінити номер</button>
+                            </form>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Особисті дані -->
+                        <div class="mb-4">
+                            <h5>Особисті дані</h5>
+                            <div class="mb-3">
+                                <label class="form-label">ПІБ</label>
+                                <p class="form-control-static">{{ user.full_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Номер телефону</label>
+                                <p class="form-control-static">{{ user.phone }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Ідентифікаційний код</label>
+                                <p class="form-control-static">{{ user.identification_code }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Зміна пароля
+        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('Паролі не співпадають');
+                return;
+            }
+
+            try {
+                const response = await fetch('/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Пароль успішно змінено!');
+                    e.target.reset();
+                } else {
+                    alert(data.error || 'Помилка при зміні пароля');
+                }
+            } catch (error) {
+                console.error('Помилка:', error);
+                alert('Помилка при зміні пароля');
+            }
+        });
+
+        // Зміна номера телефону
+        document.getElementById('change-phone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPhone = document.getElementById('new-phone').value;
+
+            try {
+                const response = await fetch('/change-phone', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        new_phone: newPhone
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Номер телефону успішно змінено!');
+                    location.reload();
+                } else {
+                    alert(data.error || 'Помилка при зміні номера телефону');
+                }
+            } catch (error) {
+                console.error('Помилка:', error);
+                alert('Помилка при зміні номера телефону');
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Депозит - Банківська система</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f4f4; }
+        .nav-link.active { font-weight: bold; color: #0d6efd !important; }
+    </style>
+</head>
+<body>
+    <!-- Меню -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ЧіпДейл Банк </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Головна</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.deposit_page') }}">Депозит</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.credit') }}">Кредит</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.settings') }}">Налаштування</a></li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text me-3">
+                        Вітаємо, {{ user.full_name.split()[0] }}!
+                    </span>
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger">Вийти</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Депозит сторінка -->
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Операції з депозитом</h4>
+                        <form id="deposit-form">
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Сума депозиту</label>
+                                <input type="number" class="form-control" id="amount" placeholder="Введіть суму" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="term" class="form-label">Термін депозиту (місяців)</label>
+                                <select class="form-select" id="term" required>
+                                    <option value="3">3 місяці</option>
+                                    <option value="6">6 місяців</option>
+                                    <option value="12">12 місяців</option>
+                                    <option value="24">24 місяці</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comment" class="form-label">Коментар (необов'язково)</label>
+                                <input type="text" class="form-control" id="comment" placeholder="Введіть коментар">
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Підтвердити депозит</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Активні депозити</h5>
+                        {% if deposits %}
+                            {% for deposit in deposits %}
+                                <div class="border-bottom py-2">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ "%.2f"|format(deposit.amount) }} грн</strong>
+                                            <br>
+                                            <small class="text-muted">Термін: {{ deposit.term }} місяців</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div>До: {{ deposit.end_date.strftime('%d.%m.%Y') }}</div>
+                                            <small class="text-success">+{{ "%.2f"|format(deposit.interest) }} грн</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">У вас немає активних депозитів</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('deposit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('amount').value;
+            const term = document.getElementById('term').value;
+            const comment = document.getElementById('comment').value;
+
+            try {
+                const response = await fetch('/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        term: parseInt(term),
+                        comment: comment
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Депозит успішно створено!');
+                    location.reload();
+                } else {
+                    alert(data.error || 'Помилка при створенні депозиту');
+                }
+            } catch (error) {
+                console.error('Помилка:', error);
+                alert('Помилка при створенні депозиту');
+            }
+        });
+    </script>
+</body>
+</html> 
