@@ -2,12 +2,14 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
 from app.config import Config
 import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
+migrate = Migrate()
 
 def create_app():
     app = Flask(__name__, 
@@ -26,6 +28,10 @@ def create_app():
     # Ініціалізація SQLAlchemy
     db.init_app(app)
     print("SQLAlchemy ініціалізовано")
+    
+    # Ініціалізація Flask-Migrate
+    migrate.init_app(app, db)
+    print("Flask-Migrate ініціалізовано")
     
     # Ініціалізація Flask-Login
     login_manager.init_app(app)

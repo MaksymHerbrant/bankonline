@@ -43,7 +43,12 @@
                     <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.dashboard') }}">Головна</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('main.deposit_page') }}">Депозит</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('main.credit') }}">Кредит</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.settings') }}">Налаштування</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.settings') }}">Налаштування</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.news_page') }}">Новини</a>
+                    </li>
                 </ul>
                 <div class="d-flex">
                     <span class="navbar-text me-3">
@@ -82,15 +87,18 @@
             </a>
         </div>
         <div class="transaction-history">
-            {% if account.transactions %}
-                {% set sorted_transactions = account.transactions|sort(attribute='timestamp', reverse=true) %}
-                {% for transaction in sorted_transactions[:5] %}
+            {% if transactions %}
+                {% for transaction in transactions[:5] %}
                     <div class="transaction-item">
                         <strong>
                             {% if transaction.type == 'transfer_out' %}
                                 Переказ: {{ transaction.recipient.full_name }}
                             {% elif transaction.type == 'transfer_in' %}
                                 Отримано від: {{ transaction.recipient.full_name }}
+                            {% elif transaction.type == 'deposit' %}
+                                Депозит
+                            {% elif transaction.type == 'credit' %}
+                                Кредит
                             {% else %}
                                 {{ transaction.type }}
                             {% endif %}
@@ -155,8 +163,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
     <script>
         let transferModal;
+        let isSubmitting = false;
 
         document.addEventListener('DOMContentLoaded', function() {
             transferModal = new bootstrap.Modal(document.getElementById('transferModal'));
@@ -164,6 +174,11 @@
             // Обробка форми переказу за телефоном
             document.getElementById('transferPhoneForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                
+                if (isSubmitting) {
+                    return;
+                }
+                
                 const phone = document.getElementById('recipient-phone').value;
                 const amount = parseFloat(document.getElementById('amount-phone').value);
                 
@@ -174,6 +189,11 @@
                 }
                 
                 try {
+                    isSubmitting = true;
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Відправляємо...';
+                    
                     const response = await fetch('/transfer', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -185,19 +205,30 @@
                     
                     const data = await response.json();
                     if (response.ok) {
-                        alert('Переказ успішно виконано');
+                        showMessage('Переказ успішно виконано', 'success');
+                        transferModal.hide();
                         location.reload();
                     } else {
-                        alert(data.error || 'Помилка при переказі');
+                        showMessage(data.error || 'Помилка при переказі', 'error');
                     }
                 } catch (error) {
-                    alert('Помилка при виконанні запиту');
+                    showMessage('Помилка при виконанні запиту', 'error');
+                } finally {
+                    isSubmitting = false;
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Переказати';
                 }
             });
 
             // Обробка форми переказу за картою
             document.getElementById('transferCardForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                
+                if (isSubmitting) {
+                    return;
+                }
+                
                 const card = document.getElementById('recipient-card').value.replace(/\s/g, '');
                 const amount = parseFloat(document.getElementById('amount-card').value);
                 
@@ -208,6 +239,11 @@
                 }
                 
                 try {
+                    isSubmitting = true;
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Відправляємо...';
+                    
                     const response = await fetch('/transfer-by-card', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -219,13 +255,19 @@
                     
                     const data = await response.json();
                     if (response.ok) {
-                        alert('Переказ успішно виконано');
+                        showMessage('Переказ успішно виконано', 'success');
+                        transferModal.hide();
                         location.reload();
                     } else {
-                        alert(data.error || 'Помилка при переказі');
+                        showMessage(data.error || 'Помилка при переказі', 'error');
                     }
                 } catch (error) {
-                    alert('Помилка при виконанні запиту');
+                    showMessage('Помилка при виконанні запиту', 'error');
+                } finally {
+                    isSubmitting = false;
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Переказати';
                 }
             });
         });

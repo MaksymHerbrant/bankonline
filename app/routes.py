@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template, redirect, url_for, session, flash, send_file
-from app.models import User, Account, Transaction, Loan, Card, Deposit
+from app.models import User, Account, Transaction, Loan, Card, Deposit, News
 from app import db
 from app.utils import (
     validate_ukrainian_phone, 
@@ -220,12 +220,15 @@ def dashboard():
         # Додаємо київський часовий пояс
         kyiv_tz = pytz.timezone('Europe/Kiev')
         
+        # Отримуємо та сортуємо транзакції
+        transactions = Transaction.query.filter_by(account_id=account.id).order_by(Transaction.timestamp.desc()).all()
+        
         # Конвертуємо час для всіх транзакцій
-        for transaction in account.transactions:
+        for transaction in transactions:
             if transaction.timestamp.tzinfo is None:
                 transaction.timestamp = pytz.UTC.localize(transaction.timestamp)
             
-        return render_template('dashboard.html', user=user, account=account, card=card, kyiv_tz=kyiv_tz)
+        return render_template('dashboard.html', user=user, account=account, card=card, transactions=transactions, kyiv_tz=kyiv_tz)
     except Exception as e:
         print(f"Помилка при доступі до dashboard: {str(e)}")
         return redirect(url_for('main.index'))
@@ -283,10 +286,12 @@ def create_deposit():
         account.balance -= amount
         
         # Створюємо транзакцію
+        current_time = pytz.UTC.localize(datetime.now())
         transaction = Transaction(
             amount=-amount,
             type='deposit',
-            account_id=account.id
+            account_id=account.id,
+            timestamp=current_time
         )
         
         db.session.add(deposit)
@@ -491,10 +496,12 @@ def create_credit():
         account.balance += amount
         
         # Створюємо транзакцію
+        current_time = pytz.UTC.localize(datetime.now())
         transaction = Transaction(
             amount=amount,
             type='credit',
-            account_id=account.id
+            account_id=account.id,
+            timestamp=current_time
         )
         
         db.session.add(loan)
@@ -637,3 +644,8 @@ def export_transactions():
     except Exception as e:
         print(f"Помилка при експорті транзакцій: {str(e)}")
         return jsonify({'error': 'Помилка при експорті транзакцій'}), 500
+
+@main_bp.route('/news')
+def news_page():
+    news_list = News.query.filter_by(is_active=True).order_by(News.date.desc()).all()
+    return render_template('news.html', news_list=news_list)

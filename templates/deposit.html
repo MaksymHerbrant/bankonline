@@ -91,6 +91,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
     <script>
         document.getElementById('deposit-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -113,14 +114,13 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('Депозит успішно створено!');
+                    showMessage('Депозит успішно створено', 'success');
                     location.reload();
                 } else {
-                    alert(data.error || 'Помилка при створенні депозиту');
+                    showMessage(data.error || 'Помилка при створенні депозиту', 'error');
                 }
             } catch (error) {
-                console.error('Помилка:', error);
-                alert('Помилка при створенні депозиту');
+                showMessage('Помилка при виконанні запиту', 'error');
             }
         });
     </script>

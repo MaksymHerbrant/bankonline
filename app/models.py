@@ -68,3 +68,14 @@ class Deposit(db.Model):
         self.start_date = datetime.utcnow()
         self.end_date = self.start_date + timedelta(days=30 * term)
         self.interest = amount * interest_rate * term / 12  # розрахунок відсотків
+
+class News(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    image_url = db.Column(db.String(500))
+    is_active = db.Column(db.Boolean, default=True)
+
+    def __repr__(self):
+        return f'<News {self.title}>'
