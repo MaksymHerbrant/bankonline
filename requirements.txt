@@ -3,6 +3,7 @@ Werkzeug==2.2.3
 gunicorn==21.2.0
 flask_login==0.6.2
 flask_bcrypt==1.0.1
-Flask_SQLAlchemy==2.5.1
+Flask-SQLAlchemy==2.5.1
+SQLAlchemy==1.4.48
 alembic==1.11.1
 Flask-Migrate==4.0.4
