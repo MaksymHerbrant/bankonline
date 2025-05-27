@@ -71,15 +71,23 @@
             left: 20px;
             z-index: 1000;
         }
+
+        .nav-link.active { font-weight: bold; color: #0d6efd !important; }
+        .back-button {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .news-container {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary back-button">
-        <i class="bi bi-arrow-left"></i> На головну
-    </a>
-
-    <div class="container">
-        <h1>Гарячі Новини</h1>
+    <div class="container py-4">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary back-button">
+            <i class="bi bi-arrow-left"></i> На головну
+        </a>
+        <h2 class="mb-4">Гарячі новини</h2>
         <div class="news-container" id="news-container">
             {% for news in news_list %}
             <div class="news-card">
