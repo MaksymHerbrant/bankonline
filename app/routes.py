@@ -1,3 +1,9 @@
+"""
+Банківська система
+Автор: Гербрант Максим,Боднар Остап,Вагурак Микола,Якимовець Станіслав
+Дата створення: 25.05.2025
+"""
+
 from flask import Blueprint, jsonify, request, render_template, redirect, url_for, session, flash, send_file
 from app.models import User, Account, Transaction, Loan, Card, Deposit, News
 from app import db
